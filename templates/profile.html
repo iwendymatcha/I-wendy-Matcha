@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <!-- ข้อมูลสมาชิก & การสะสมแต้ม (เฉพาะลูกค้าสมาชิก) -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center mb-4">
+            <img src="{{ url_for('static', filename='images/loyalty_points.jpeg') }}" alt="สะสมแต้ม I wendy Matcha" 
+                 class="mx-auto mb-3 rounded-circle shadow-sm object-fit-cover border border-3" 
+                 style="width: 90px; height: 90px; border-color: #cd6184 !important;">
+
+            <h4 class="fw-bold mb-1" style="color: #254117;">{{ user.name }}</h4>
+            <p class="text-muted small mb-3">@{{ user.username }} • 📞 {{ user.phone }}</p>
+
+            <div class="p-3 rounded-4 my-3" style="background-color: #ffecf2; border: 1.5px solid #f6ccd8;">
+                <span class="text-muted small d-block">แต้มสะสมทั้งหมด</span>
+                <div class="display-4 fw-bold my-1" style="color: #cd6184;">{{ user.points }}</div>
+                <div class="small text-muted">แต้ม</div>
+
+                <!-- แสดง 10 แสตมป์สะสมแต้ม -->
+<div class="d-grid gap-2 my-3 mx-auto" style="grid-template-columns: repeat(5, 1fr); max-width: 250px; justify-items: center;">
+    {% for i in range(1, 11) %}
+    <div class="stamp-circle {% if (user.points % 10) >= i or user.points >= 10 %}active{% endif %}" title="แก้วที่ {{ i }}">
+        <img src="{{ url_for('static', filename='images/loyalty_points.jpeg') }}" class="stamp-img" alt="แต้ม {{ i }}">
+    </div>
+    {% endfor %}
+</div>
+
+                <div class="progress mb-2" style="height: 8px; border-radius: 6px; background-color: rgba(205, 97, 132, 0.2);">
+                    {% set progress = (user.points % 10) * 10 %}
+                    <div class="progress-bar" role="progressbar" style="width: {{ progress }}%; background-color: #cd6184;"></div>
+                </div>
+                <small class="text-muted d-block" style="font-size: 0.78rem;">
+                    สะสมครบ 10 แต้ม ใช้เป็นส่วนลดฟรี 1 แก้ว (-90 ฿) ได้ทันทีในหน้าสั่งซื้อ
+                </small>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-matcha w-100 rounded-pill py-2 text-white shadow-sm">
+                <i class="fa-solid fa-plus me-1"></i> สั่งเครื่องดื่มเพิ่ม
+            </a>
+        </div>
+    </div>
+
+    <!-- ฝั่งขวา: ติดตามสถานะการสั่งซื้อ & รายการการสั่งซื้อครั้งก่อนหน้า -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 pb-2 border-bottom">
+                <h4 class="fw-bold mb-0" style="color: #254117;">
+                    <i class="fa-solid fa-truck-fast text-rose me-2"></i> ติดตามสถานะการสั่งซื้อ & ประวัติสั่งซื้อ
+                </h4>
+            </div>
+
+            {% if orders_data %}
+                <!-- 1. กล่องติดตามสถานะคำสั่งซื้อล่าสุด (Latest Order Tracking) -->
+                {% set latest = orders_data[0] %}
+                {% set ord = latest.order %}
+                
+                <div class="card border-0 rounded-4 p-3 p-md-4 mb-4" style="background-color: #f7faf7; border: 1.5px solid #dbe7dd !important;">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div>
+                            <span class="badge rounded-pill px-3 py-1 text-white fw-normal" style="background-color: var(--matcha-rose);">
+                                คำสั่งซื้อล่าสุด
+                            </span>
+                            <span class="fw-bold fs-5 ms-2 text-dark">#{{ ord.order_no }}</span>
+                            <span class="text-muted small ms-2"><i class="fa-regular fa-clock me-1"></i> {{ ord.created_at }}</span>
+                        </div>
+                        <div>
+                            <span class="h4 fw-bold mb-0" style="color: #254117;">{{ "%.2f"|format(ord.grand_total) }} ฿</span>
+                        </div>
+                    </div>
+
+                    <!-- Visual Order Status Stepper -->
+                    <div class="order-stepper">
+                        <!-- Step 1: สั่งซื้อแล้ว -->
+                        <div class="order-step completed">
+                            <div class="order-step-icon">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <div class="order-step-title">สั่งซื้อสำเร็จ</div>
+                            <div class="order-step-desc">แนบสลิปแล้ว</div>
+                        </div>
+
+                        <!-- Step 2: ตรวจสอบการโอนเงิน -->
+                        <div class="order-step {% if ord.payment_status == 'verified' %}completed{% elif ord.payment_status == 'rejected' %}danger{% else %}active{% endif %}">
+                            <div class="order-step-icon">
+                                {% if ord.payment_status == 'verified' %}
+                                    <i class="fa-solid fa-circle-check"></i>
+                                {% elif ord.payment_status == 'rejected' %}
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-hourglass-half"></i>
+                                {% endif %}
+                            </div>
+                            <div class="order-step-title">
+                                {% if ord.payment_status == 'verified' %}
+                                    ชำระเงินแล้ว
+                                {% elif ord.payment_status == 'rejected' %}
+                                    สลิปไม่ถูกต้อง
+                                {% else %}
+                                    รอตรวจสอบ
+                                {% endif %}
+                            </div>
+                            <div class="order-step-desc">
+                                {% if ord.payment_status == 'verified' %}
+                                    แอดมินยืนยันแล้ว
+                                {% elif ord.payment_status == 'rejected' %}
+                                    ติดต่อร้านค้า
+                                {% else %}
+                                    รอแอดมินตรวจสลิป
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Step 3: ปรุง & จัดส่งเครื่องดื่ม -->
+                        <div class="order-step {% if ord.shipping_status == 'completed' %}completed{% elif ord.shipping_status in ['delivering', 'preparing'] and ord.payment_status == 'verified' %}active{% endif %}">
+                            <div class="order-step-icon">
+                                {% if ord.shipping_status == 'completed' %}
+                                    <i class="fa-solid fa-box-open"></i>
+                                {% elif ord.shipping_status == 'delivering' %}
+                                    <i class="fa-solid fa-motorcycle"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-mug-hot"></i>
+                                {% endif %}
+                            </div>
+                            <div class="order-step-title">
+                                {% if ord.shipping_status == 'completed' %}
+                                    จัดส่งสำเร็จ
+                                {% elif ord.shipping_status == 'delivering' %}
+                                    กำลังนำส่ง
+                                {% else %}
+                                    กำลังเตรียมชง
+                                {% endif %}
+                            </div>
+                            <div class="order-step-desc">
+                                {% if ord.shipping_status == 'completed' %}
+                                    ส่งถึงปลายทางแล้ว
+                                {% elif ord.shipping_status == 'delivering' %}
+                                    ไรเดอร์กำลังเดินทาง
+                                {% else %}
+                                    มัทฉะสดใหม่
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Step 4: ใบเสร็จรับเงิน -->
+                        <div class="order-step {% if ord.payment_status == 'verified' %}completed{% endif %}">
+                            <div class="order-step-icon">
+                                {% if ord.payment_status == 'verified' %}
+                                    <i class="fa-solid fa-receipt"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-lock"></i>
+                                {% endif %}
+                            </div>
+                            <div class="order-step-title">พิมพ์ใบเสร็จ</div>
+                            <div class="order-step-desc">
+                                {% if ord.payment_status == 'verified' %}
+                                    พร้อมพิมพ์ได้แล้ว
+                                {% else %}
+                                    รอยืนยันการโอน
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items in latest order -->
+                    <div class="bg-white rounded-3 p-3 border mb-3">
+                        <small class="text-muted fw-bold d-block mb-2">รายการเครื่องดื่มและสินค้าในคำสั่งซื้อนี้:</small>
+                        <ul class="list-unstyled mb-0 small">
+                            {% for oi in latest['items'] %}
+                            <li class="d-flex justify-content-between py-1 border-bottom border-light">
+                                <div>
+                                    <strong class="text-dark">{{ oi.product_name }}</strong>
+                                    {% if oi.product_id in bestseller_ids %}
+                                    <span class="badge bg-warning text-dark border border-warning rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.62rem;">
+                                        <i class="fa-solid fa-star"></i> ขายดี
+                                    </span>
+                                    {% endif %}
+                                    <span class="text-muted">x {{ oi.quantity }}</span>
+                                    {% if oi.sweetness != '-' %}
+                                    <span class="text-muted ms-1">(หวาน: {{ oi.sweetness }}{% if oi.milk_type and oi.milk_type != '-' and oi.milk_type != 'ไม่ใช้นม' %}, นม: {{ oi.milk_type }}{% endif %})</span>
+                                    {% endif %}
+                                </div>
+                                <span class="fw-semibold text-dark">{{ "%.0f"|format(oi.total_price) }} ฿</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Summary & Actions for latest order -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="small text-muted">
+                            📍 <strong>สถานที่ส่ง:</strong> {{ ord.address_note }} ({{ ord.distance_km }} km)
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if ord.payment_status == 'verified' %}
+                            <a href="{{ url_for('order_receipt', order_no=ord.order_no) }}" class="btn btn-matcha btn-sm rounded-pill px-3 text-white">
+                                <i class="fa-solid fa-print me-1"></i> ดู / พิมพ์ใบเสร็จ
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('order_receipt', order_no=ord.order_no) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3" 
+                               title="ใบเสร็จจะพิมพ์ได้หลังจากแอดมินยืนยันยอด">
+                                <i class="fa-solid fa-receipt me-1"></i> ดูใบเสร็จ (รอแอดมินยืนยัน)
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. ส่วนรายการการสั่งซื้อครั้งก่อนหน้า (Previous Orders History) -->
+                {% if orders_data|length > 1 %}
+                    <h5 class="fw-bold mb-3 mt-4" style="color: #254117;">
+                        <i class="fa-solid fa-clock-rotate-left text-rose me-2"></i> รายการการสั่งซื้อครั้งก่อนหน้า ({{ orders_data|length - 1 }} รายการ)
+                    </h5>
+
+                    <div class="d-flex flex-column gap-3">
+                        {% for item in orders_data[1:] %}
+                        {% set prev_ord = item.order %}
+                        <div class="border rounded-4 p-3 bg-light">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
+                                <div>
+                                    <span class="fw-bold text-dark">#{{ prev_ord.order_no }}</span>
+                                    <span class="text-muted small ms-2">{{ prev_ord.created_at }}</span>
+                                </div>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    <span class="badge {% if prev_ord.payment_status == 'verified' %}bg-success{% elif prev_ord.payment_status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill px-2 py-1 small">
+                                        {% if prev_ord.payment_status == 'verified' %}ชำระเงินแล้ว{% elif prev_ord.payment_status == 'rejected' %}สลิปไม่ถูกต้อง{% else %}รอตรวจสอบ{% endif %}
+                                    </span>
+                                    <span class="badge {% if prev_ord.shipping_status == 'completed' %}bg-primary{% elif prev_ord.shipping_status == 'delivering' %}bg-info text-dark{% else %}bg-secondary{% endif %} rounded-pill px-2 py-1 small">
+                                        {% if prev_ord.shipping_status == 'completed' %}จัดส่งสำเร็จ{% elif prev_ord.shipping_status == 'delivering' %}กำลังนำส่ง{% else %}กำลังเตรียม{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- รายการสินค้า -->
+                            <ul class="list-unstyled mb-2 small">
+                                {% for oi in item['items'] %}
+                                <li class="d-flex justify-content-between py-1 border-bottom border-light">
+                                    <div>
+                                        <strong>{{ oi.product_name }}</strong>
+                                        {% if oi.product_id in bestseller_ids %}
+                                        <span class="badge bg-warning text-dark border border-warning rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.62rem;">
+                                            <i class="fa-solid fa-star"></i> ขายดี
+                                        </span>
+                                        {% endif %}
+                                        x {{ oi.quantity }}
+                                        {% if oi.sweetness != '-' %}
+                                        <span class="text-muted">(หวาน: {{ oi.sweetness }}{% if oi.milk_type and oi.milk_type != '-' and oi.milk_type != 'ไม่ใช้นม' %}, นม: {{ oi.milk_type }}{% endif %})</span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="text-dark">{{ "%.0f"|format(oi.total_price) }} ฿</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-1">
+                                <div class="small text-muted">
+                                    ยอดชำระ: <strong class="text-dark">{{ "%.2f"|format(prev_ord.grand_total) }} ฿</strong>
+                                </div>
+                                <div>
+                                    {% if prev_ord.payment_status == 'verified' %}
+                                    <a href="{{ url_for('order_receipt', order_no=prev_ord.order_no) }}" class="btn btn-outline-success btn-sm rounded-pill px-3" style="font-size: 0.78rem;">
+                                        <i class="fa-solid fa-receipt me-1"></i> ดูใบเสร็จ
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('order_receipt', order_no=prev_ord.order_no) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3" style="font-size: 0.78rem;">
+                                        <i class="fa-solid fa-receipt me-1"></i> ดูรายละเอียด
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- กรณีมีเพียง 1 คำสั่งซื้อ (คำสั่งซื้อแรก) -->
+                    <div class="alert rounded-4 border-0 p-3 text-center my-3" style="background-color: #ffecf2; color: #8a2a4c; border: 1px solid #f6ccd8 !important;">
+                        <i class="fa-solid fa-circle-info me-1"></i> นี่คือคำสั่งซื้อแรกของคุณ คุณสามารถดูและติดตามสถานะได้จากกล่องด้านบนนะคะ หากมีการสั่งซื้อครั้งต่อไป รายการคำสั่งซื้อครั้งก่อนๆ จะถูกแสดงที่นี่ค่ะ 🍃
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <!-- ไม่มีคำสั่งซื้อในระบบ -->
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-regular fa-clipboard fs-1 mb-3 opacity-50"></i>
+                    <h5 class="fw-bold text-dark">ยังไม่มีประวัติการสั่งซื้อเครื่องดื่มมัทฉะ</h5>
+                    <p class="small text-muted mb-4">คุณยังไม่มีคำสั่งซื้อในระบบ สามารถเริ่มสั่งชามัทฉะแก้วโปรด หรือเซ็ตชงชาได้เลยค่ะ</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-matcha rounded-pill px-4 py-2">
+                        <i class="fa-solid fa-mug-hot me-1"></i> เลือกดูเมนูอร่อยเลย
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

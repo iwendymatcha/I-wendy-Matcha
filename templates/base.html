@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}I wendy Matcha - ร้านชามัทฉะแท้ & อุปกรณ์ชงชาสไตล์ญี่ปุ่น{% endblock %}</title>
+
+    <!-- Google Font: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='2.3') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    {% if request.endpoint == 'index' %}
+    <!-- ==============================================
+         COVER SCREEN (หน้าปกเปิดเว็บ I wendy Matcha)
+         คลิก 1 ครั้ง: แก้วมัทฉะเคลื่อนขึ้นมา + ตัวหนังสือมูฟไปหน้าถัดไป
+         ============================================== -->
+    <div id="landingCoverOverlay" class="cover-splash-overlay" onclick="handleCoverTransition()" title="คลิกเพื่อเข้าสู่ร้าน I wendy Matcha">
+        <!-- Lace Background Backdrop -->
+        <div class="cover-lace-backdrop"></div>
+
+        <!-- 16:9 Canvas Stage -->
+        <div class="cover-stage">
+            <!-- Text Logo: "I wendy Matcha" (Starts centered, moves into page) -->
+            <div id="coverTextWrap" class="cover-text-layer">
+                <img src="{{ url_for('static', filename='images/cover_text_exact.png') }}" 
+                     alt="I wendy Matcha" 
+                     class="cover-text-asset">
+            </div>
+
+            <!-- Signature Cup with Pink Cream & Lily (Complete, 100% solid, fully visible!) -->
+            <div id="coverCupWrap" class="cover-cup-layer">
+                <img src="{{ url_for('static', filename='images/cover_cup_full.png') }}" 
+                     alt="Matcha Signature Drink" 
+                     class="cover-cup-asset">
+            </div>
+        </div>
+
+        <!-- Subtle Click-to-Enter Floating Prompt -->
+        <div id="coverClickPrompt" class="cover-click-prompt">
+            <div class="cover-prompt-pill">
+                <i class="fa-solid fa-hand-pointer fa-bounce me-2 text-warning"></i>
+                <span>แตะหรือคลิกเพื่อเข้าสู่ร้าน</span>
+                <i class="fa-solid fa-leaf ms-2 text-success"></i>
+            </div>
+            <small class="cover-prompt-sub text-muted mt-1 d-block">Click anywhere to enter</small>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light navbar-custom sticky-top">
+        <div class="container">
+            <div class="d-flex align-items-center gap-2">
+                <a class="navbar-brand d-flex align-items-center me-0 py-0" href="{{ url_for('index', cover=1) }}" onclick="replayCoverScreen(event)" title="I wendy Matcha (คลิกเพื่อดูหน้าปก)">
+                    <img src="{{ url_for('static', filename='images/logo_nav.png') }}" 
+                         alt="I wendy Matcha Logo" 
+                         class="brand-logo-img">
+                </a>
+            </div>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navContent">
+                <!-- ข้อมูลตะกร้า แผงควบคุม ผู้ใช้ ไปชิดฝั่งด้านขวา (ms-auto) -->
+                <div class="navbar-nav ms-auto align-items-center flex-row flex-wrap gap-2 py-2 py-lg-0">
+                    <!-- 1. ตะกร้าสินค้าถูกย้ายไปที่มุมขวาล่างเป็น Floating Widget (Image 3) -->
+                    {% if not current_user or current_user.role != 'admin' %}
+                    <span id="navCartCount" class="d-none">{{ cart_total_items }}</span>
+                    {% endif %}
+
+                    <!-- 2. ภาพรวมร้าน (เฉพาะแอดมิน - ย้ายกระดิ่งแจ้งเตือนลงไปที่มุมขวาล่างแล้ว) -->
+                    {% if current_user and current_user.role == 'admin' %}
+                    <a class="btn btn-warning btn-sm rounded-pill px-3 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-2 text-dark" 
+                       href="{{ url_for('admin_dashboard') }}" id="navAdminBtn">
+                        <img src="{{ url_for('static', filename='images/admin_logo.png') }}" alt="Admin Logo" style="width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated;">
+                        <span>ภาพรวมร้าน</span>
+                    </a>
+                    {% endif %}
+
+
+                    <!-- 4. บัญชีผู้ใช้ -->
+                    {% if current_user %}
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-dark rounded-pill px-3 py-1 dropdown-toggle d-inline-flex align-items-center gap-2 bg-white shadow-sm" 
+                                type="button" data-bs-toggle="dropdown">
+                            <i class="fa-regular fa-circle-user fs-6 text-dark"></i>
+                            <span class="fw-semibold text-dark">{{ current_user.name }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2">
+                            {% if current_user.role == 'admin' %}
+                            <li class="px-3 py-2 text-muted small border-bottom">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <img src="{{ url_for('static', filename='images/admin_logo.png') }}" alt="Admin" style="width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated;">
+                                    <strong>แอดมินร้าน</strong> (@{{ current_user.username }})
+                                </div>
+                                <span class="text-success"><i class="fa-solid fa-shield-halved me-1"></i> ผู้ดูแลระบบ I wendy Matcha</span>
+                            </li>
+                            <li><a class="dropdown-item py-2" href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-gauge-high me-2 text-warning"></i> ภาพรวมร้าน</a></li>
+                            {% else %}
+                            <li class="px-3 py-2 text-muted small border-bottom">
+                                👤 <strong>{{ current_user.name }}</strong> (@{{ current_user.username }})<br>
+                                <span class="text-success">สะสม {{ current_user.points }}/10 แต้ม (ครบ 10 ฟรี 1 แก้ว)</span>
+                            </li>
+                            <li><a class="dropdown-item py-2" href="{{ url_for('order_status') }}"><i class="fa-solid fa-truck-fast me-2 text-success"></i> ติดตามสถานะ & ประวัติสั่งซื้อ</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> ออกจากระบบ</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <!-- สำหรับผู้ใช้ทั่วไป / ยังไม่ได้เข้าสู่ระบบ -->
+                    <a class="btn btn-outline-dark btn-sm rounded-pill px-3 py-1 bg-white shadow-sm fw-medium" href="{{ url_for('login') }}">เข้าสู่ระบบ</a>
+                    <a class="btn btn-rose btn-sm rounded-pill px-3 py-1 text-white shadow-sm fw-medium" href="{{ url_for('register') }}">สมัครสมาชิก</a>
+                    {% endif %}
+
+                    <!-- 5. ประตูโค้ดลับแอดมิน (แสดงเฉพาะตอนยังไม่ได้เป็นแอดมิน) -->
+                    {% if not current_user or current_user.role != 'admin' %}
+                    <a class="nav-link px-2 d-flex align-items-center" style="color: var(--matcha-primary); opacity: 0.85;" href="{{ url_for('secret_admin') }}" title="เข้าสู่ระบบแอดมิน">
+                        <img src="{{ url_for('static', filename='images/admin_logo.png') }}" alt="Admin Portal" style="width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));">
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container py-4 flex-grow-1">
+        <!-- Flash Alert Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center" role="alert">
+                            <div class="me-2 fs-5">
+                                {% if category == 'success' %}<i class="fa-solid fa-circle-check text-success"></i>
+                                {% elif category == 'danger' %}<i class="fa-solid fa-circle-exclamation text-danger"></i>
+                                {% elif category == 'warning' %}<i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                                {% else %}<i class="fa-solid fa-circle-info text-info"></i>{% endif %}
+                            </div>
+                            <div class="flex-grow-1">{{ msg }}</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if request.endpoint not in ['admin_dashboard', 'secret_admin', 'login', 'register', 'forgot_password', 'reset_password'] %}
+    <!-- Footer - ชัดเจน มองเห็นตัวอักษรได้สบายตา (แสดงเฉพาะหน้าร้านทั่วไป) -->
+    <footer>
+        <div class="container">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3"><i class="fa-solid fa-leaf text-success me-2"></i>I wendy Matcha</h5>
+                    <p class="small mb-2">
+                        ร้านมัทฉะแท้คัดสรรพิเศษเกรดพิธีการจากญี่ปุ่น พร้อมเสิร์ฟเครื่องดื่มมัทฉะสกัดสด ผงมัทฉะจากทางร้านI wendy Matcha และเซ็ตอุปกรณ์ชงชาครบครัน
+                    </p>
+                    <p class="small mb-0">
+                        📍 <strong>จุดให้บริการ:</strong> สาขา Central Khonkaen Campus | คำนวณค่าส่งอัตโนมัติตามระยะทางจริง
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="fw-semibold mb-3">สิทธิประโยชน์สมาชิก</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2">⭐ สะสมแต้ม +1 แต้ม ต่อแก้วน้ำ</li>
+                        <li class="mb-2">🎁 ซื้อครบ 10 แก้ว ฟรี 1 แก้วทันที</li>
+                        <li class="mb-2">🚚 น้อยกว่า 3 กม. ส่งฟรี! (เกิน 3 กม. 5฿/กม.)</li>
+                    </ul>
+                </div>  
+                <div class="col-md-2">
+                    <h6 class="fw-semibold mb-3">เวลาทำการ</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"> เปิด 10:00-22:00 น.</li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="fw-semibold mb-3">ช่องทางติดต่อ & แอดมิน</h6>
+                    <p class="small mb-2"><i class="fa-solid fa-phone me-2 text-success"></i> เบอร์โทรร้าน: <strong>{{ store_phone }}</strong></p>
+                    <p class="small mb-2"><i class="fa-solid fa-qrcode me-2 text-success"></i> G-mail: <strong>IwendyMatcha@gmail.com</strong></p>
+                </div>
+            </div>
+            <div class="footer-divider pt-3 text-center small">
+                &copy; 2026 I wendy Matcha. All rights reserved. matcha syndrome 🍃
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- Points Modal (กดดูแต้มจากปุ่มบนซ้าย) -->
+    {% if not current_user or current_user.role != 'admin' %}
+    <div class="modal fade" id="pointsModal" tabindex="-1" aria-labelledby="pointsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #254117 0%, #1e3512 100%); border-bottom: 2px solid var(--matcha-rose);">
+                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="pointsModalLabel">
+                        <span>⭐</span> สะสมแต้ม I wendy Matcha
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-3">
+                        <img src="{{ url_for('static', filename='images/loyalty_points.jpeg') }}" alt="สะสมแต้ม I wendy Matcha" 
+                             class="rounded-circle shadow-sm object-fit-cover border border-3 bg-white" 
+                             style="width: 100px; height: 100px; border-color: #cd6184 !important;">
+                    </div>
+                    
+                    <h5 class="fw-bold mb-1" style="color: #254117;">สิทธิพิเศษสำหรับสมาชิก</h5>
+                    <p class="mb-3 fs-6" style="color: #cd6184; font-weight: 600;">
+                        สั่งครบ 10 แก้ว รับฟรีทันที 1 แก้ว! 🍵
+                    </p>
+                    
+                    <div class="p-3 rounded-3 mb-3 text-start" style="background-color: #ffecf2; border: 1px solid #f6ccd8;">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="fa-solid fa-circle-check text-success mt-1"></i>
+                            <span class="small text-dark">สั่งเครื่องดื่ม 1 แก้วที่จัดส่งสำเร็จ รับแต้มสะสม <strong>+1 แต้ม</strong> ทันที</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-gift text-danger mt-1"></i>
+                            <span class="small text-dark">สะสมครบ 10 แต้ม สามารถเลือกกดใช้สิทธิ์ลดฟรี <strong>90 บาท</strong> ในขั้นตอนชำระเงิน</span>
+                        </div>
+                    </div>
+
+                    {% if current_user %}
+                    <div class="card border-0 rounded-3 p-3 shadow-sm text-start" style="background: #fafcfb; border: 1.5px solid #254117 !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark">แต้มสะสมของคุณ:</span>
+                            <span class="badge rounded-pill px-3 py-1 fs-6" style="background-color: #cd6184; color: white;">
+                                {{ current_user.points }} / 10 แต้ม
+                            </span>
+                        </div>
+                        <div class="progress mb-2" style="height: 12px; border-radius: 6px; background-color: #e5ece6;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
+                                 style="width: {{ [((current_user.points / 10) * 100), 100]|min }}%; background-color: #254117;"></div>
+                        </div>
+                        {% if current_user.points >= 10 %}
+                        <div class="text-success small fw-semibold text-center mt-1">
+                            🎉 คุณสะสมครบ 10 แต้มแล้ว! แลกรับเครื่องดื่มฟรีได้ในหน้าสั่งซื้อ
+                        </div>
+                        {% else %}
+                        <div class="text-muted small text-center mt-1">
+                            อีกเพียง <strong>{{ 10 - current_user.points }} แก้ว</strong> จะได้รับเครื่องดื่มฟรี 1 แก้ว!
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 bg-light rounded-3 text-center border">
+                        <p class="small text-muted mb-2">เข้าสู่ระบบหรือสมัครสมาชิกเพื่อเริ่มสะสมแต้ม</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-dark btn-sm rounded-pill px-3">เข้าสู่ระบบ</a>
+                            <a href="{{ url_for('register') }}" class="btn btn-rose btn-sm rounded-pill px-3 text-white">สมัครสมาชิก</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-3 justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Floating Ornate Widget (มุมขวาล่าง: ตะกร้าสำหรับลูกค้า / กระดิ่งแจ้งเตือนสำหรับแอดมิน) -->
+    {% if not current_user or current_user.role != 'admin' %}
+        <!-- สำหรับลูกค้า: แสดงตะกร้าสินค้า (เฉพาะหน้าสั่งซื้อสินค้า/หน้าร้าน index) -->
+        {% if request.endpoint == 'index' %}
+        <a href="{{ url_for('view_cart') }}" id="floatingCartWidget" class="floating-cart-btn" title="ตะกร้าสินค้า (คลิกเพื่อดูรายการ)">
+            <div class="floating-cart-inner">
+                <img src="{{ url_for('static', filename='images/floating_cart_frame.png') }}" class="floating-cart-frame" alt="ตะกร้าสินค้า I wendy Matcha">
+                <div class="floating-cart-content">
+                    <i class="fa-solid fa-cart-shopping floating-cart-icon"></i>
+                    <span class="floating-cart-label">ตะกร้า</span>
+                </div>
+                <span id="floatingCartCount" class="floating-cart-badge">{{ cart_total_items }}</span>
+            </div>
+        </a>
+        {% endif %}
+    {% else %}
+        <!-- สำหรับแอดมิน: แสดงกระดิ่งแจ้งเตือนคำสั่งซื้อใหม่ (คลิกแล้วไปที่รายการคำสั่งซื้อรอตรวจสอบสลิปทันที) -->
+        <a href="{{ url_for('admin_dashboard') }}?filter=pending#ordersTab" id="floatingAdminBell" class="floating-cart-btn" title="กระดิ่งแจ้งเตือน: ดูคำสั่งซื้อใหม่รอตรวจสอบสลิป ({{ pending_orders_count }} รายการ)" onclick="handleFloatingAdminBellClick(event)">
+            <div class="floating-cart-inner">
+                <img src="{{ url_for('static', filename='images/floating_cart_frame.png') }}" class="floating-cart-frame" alt="แจ้งเตือนคำสั่งซื้อ I wendy Matcha">
+                <div class="floating-cart-content">
+                    <i class="fa-solid fa-bell floating-cart-icon {% if pending_orders_count > 0 %}bell-ring-active{% endif %}" id="floatingBellIcon" style="color: #d97706; filter: drop-shadow(0 1px 2px rgba(217, 119, 6, 0.4)); font-size: 1.45rem;"></i>
+                    <span class="floating-cart-label" style="color: #5c182f;">แจ้งเตือน</span>
+                </div>
+                <span id="floatingAdminBadge" class="floating-cart-badge {% if pending_orders_count == 0 %}d-none{% endif %}" style="background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);">
+                    {{ pending_orders_count }}
+                </span>
+            </div>
+        </a>
+    {% endif %}
+
+    {% if current_user and current_user.role == 'admin' %}
+    <script>
+    function handleFloatingAdminBellClick(e) {
+        const isAdminPage = window.location.pathname.endsWith('/admin') || window.location.pathname.includes('/admin');
+        if (isAdminPage) {
+            e.preventDefault();
+            if (typeof switchToTab === 'function') {
+                switchToTab('ordersTab', 'pending');
+            } else {
+                const btn = document.querySelector('button[data-bs-target="#ordersTab"]');
+                if (btn && window.bootstrap) {
+                    const tab = bootstrap.Tab.getOrCreateInstance(btn);
+                    tab.show();
+                }
+                const pendingBtn = document.querySelector('.order-filter-btn[data-filter="pending"]');
+                if (pendingBtn) {
+                    if (typeof filterOrders === 'function') {
+                        filterOrders('pending', pendingBtn);
+                    } else {
+                        pendingBtn.click();
+                    }
+                }
+            }
+            
+            // Update URL without reloading
+            if (window.history && window.history.replaceState) {
+                history.replaceState(null, null, '{{ url_for("admin_dashboard") }}?filter=pending#ordersTab');
+            }
+
+            // Smooth scroll to orders section or pending banner
+            const ordersEl = document.getElementById('ordersTab') || document.getElementById('pendingOrdersBanner');
+            if (ordersEl) {
+                ordersEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const bentoCard = ordersEl.querySelector('.bento-card') || ordersEl;
+                bentoCard.style.transition = 'box-shadow 0.4s ease, border-color 0.4s ease';
+                bentoCard.style.boxShadow = '0 0 0 4px rgba(245, 158, 11, 0.4), 0 10px 25px -5px rgba(0, 0, 0, 0.1)';
+                setTimeout(() => {
+                    bentoCard.style.boxShadow = '';
+                }, 1800);
+            }
+        }
+    }
+
+    (function() {
+        function checkAdminFloatingBell() {
+            fetch('/api/admin/pending-orders')
+                .then(r => r.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    const badge = document.getElementById('floatingAdminBadge');
+                    const icon = document.getElementById('floatingBellIcon');
+                    if (badge) {
+                        badge.textContent = count;
+                        if (count > 0) {
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    }
+                    if (icon) {
+                        if (count > 0) {
+                            icon.classList.add('bell-ring-active');
+                        } else {
+                            icon.classList.remove('bell-ring-active');
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+        setInterval(checkAdminFloatingBell, 15000);
+    })();
+    </script>
+    {% endif %}
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    {% if request.endpoint == 'index' %}
+    <!-- Cover Splash Screen Transition Script -->
+    <script>
+    let isCoverTransitioning = false;
+    function handleCoverTransition() {
+        if (isCoverTransitioning) return;
+        isCoverTransitioning = true;
+
+        const overlay = document.getElementById('landingCoverOverlay');
+        if (!overlay) return;
+
+        // 1. Trigger animation: cup moves up + text glides into next page
+        overlay.classList.add('is-animating');
+
+        try {
+            sessionStorage.setItem('enteredMatchaStore', 'true');
+        } catch(e) {}
+
+        // 2. Smoothly lift and reveal the storefront page
+        setTimeout(() => {
+            overlay.classList.add('is-dismissed');
+        }, 820);
+
+        // 3. Remove scroll lock and hide overlay
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            document.body.classList.remove('cover-locked');
+        }, 1500);
+    }
+
+    function replayCoverScreen(e) {
+        const overlay = document.getElementById('landingCoverOverlay');
+        const isStorefront = window.location.pathname === '/' || window.location.pathname.endsWith('/index');
+        if (overlay && isStorefront) {
+            if (e) e.preventDefault();
+            overlay.classList.remove('is-animating', 'is-dismissed');
+            overlay.style.display = 'flex';
+            document.body.classList.add('cover-locked');
+            isCoverTransitioning = false;
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const overlay = document.getElementById('landingCoverOverlay');
+        if (!overlay) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const forceCover = urlParams.get('cover') === '1';
+        let hasEntered = false;
+        try {
+            hasEntered = sessionStorage.getItem('enteredMatchaStore') === 'true';
+        } catch(e) {}
+
+        if (hasEntered && !forceCover) {
+            overlay.style.display = 'none';
+            document.body.classList.remove('cover-locked');
+        } else {
+            document.body.classList.add('cover-locked');
+        }
+    });
+    </script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
+</body>
+</html>

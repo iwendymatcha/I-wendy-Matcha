@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 rounded-4 p-4 p-md-5 bg-white position-relative overflow-hidden shadow" 
+             style="border: 1.5px solid #bdd9e7 !important; box-shadow: 0 15px 35px rgba(189, 217, 231, 0.3) !important;">
+            <!-- Top Gradient Accent Line: เขียวมัทฉะ, ครีมเนย, ชมพู April -->
+            <div style="height: 5px; background: linear-gradient(90deg, #a9b762 0%, #faf8ec 48%, #f8a9be 100%); position: absolute; top: 0; left: 0; right: 0;"></div>
+
+            <div class="text-center mb-4">
+                <!-- Store Logo: Identical to Receipt Slip -->
+                <div class="mb-3">
+                    <img src="{{ url_for('static', filename='images/logo_nav.png') }}" 
+                         alt="I wendy Matcha Logo" 
+                         style="max-height: 58px; width: auto; object-fit: contain;">
+                </div>
+                <h4 class="fw-bold text-dark mb-1">เข้าสู่ระบบสมาชิก</h4>
+                <p class="text-muted small mb-3">ครอบครัว I wendy Matcha ยินดีต้อนรับค่ะ</p>
+                
+                <!-- Member Perks Capsule Badge -->
+                <div class="p-2 px-3 rounded-pill d-inline-flex align-items-center gap-2 small" 
+                     style="background-color: #ecf5f8; border: 1.5px solid #bdd9e7; color: #355f73;">
+                    <span style="color: #f59e0b;"><i class="fa-solid fa-star"></i></span>
+                    <span>สะสมครบ 10 แต้ม ฟรีทันที 1 แก้ว 🍵</span>
+                </div>
+            </div>
+
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                        <i class="fa-regular fa-user text-muted me-1"></i> ชื่อผู้ใช้ (Username)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-pill ps-3">
+                            <i class="fa-solid fa-user text-muted small"></i>
+                        </span>
+                        <input type="text" name="username" class="form-control border-start-0 rounded-end-pill py-2" 
+                               placeholder="ชื่อผู้ใช้ของคุณ" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-semibold text-dark small mb-0">
+                            <i class="fa-solid fa-lock text-muted me-1"></i> รหัสผ่าน (Password)
+                        </label>
+                        <a href="{{ url_for('forgot_password') }}" class="small text-decoration-none" style="color: #d86e8a;">
+                            <i class="fa-solid fa-key me-1"></i> ลืมรหัสผ่าน?
+                        </a>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-pill ps-3">
+                            <i class="fa-solid fa-lock text-muted small"></i>
+                        </span>
+                        <input type="password" name="password" class="form-control border-start-0 rounded-end-pill py-2" 
+                               placeholder="รหัสผ่านของคุณ" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-matcha w-100 py-3 rounded-pill fs-6 fw-bold mt-2 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>เข้าสู่ระบบ</span>
+                </button>
+            </form>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <p class="mb-0 text-muted small">
+                    ยังไม่มีบัญชีสมาชิก? 
+                    <a href="{{ url_for('register') }}" class="fw-bold text-decoration-none ms-1" style="color: #d86e8a;">
+                        <i class="fa-solid fa-user-plus me-1"></i> สมัครสมาชิกใหม่
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

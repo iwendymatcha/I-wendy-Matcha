@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 rounded-4 p-4 p-md-5 bg-white position-relative overflow-hidden shadow" 
+             style="border: 1.5px solid #bdd9e7 !important; box-shadow: 0 15px 35px rgba(189, 217, 231, 0.3) !important;">
+            <!-- Top Gradient Accent Line: เขียวมัทฉะ, ครีมเนย, ชมพู April -->
+            <div style="height: 5px; background: linear-gradient(90deg, #a9b762 0%, #faf8ec 48%, #f8a9be 100%); position: absolute; top: 0; left: 0; right: 0;"></div>
+
+            <div class="text-center mb-4">
+                <!-- Store Logo: Identical to Receipt Slip -->
+                <div class="mb-3">
+                    <img src="{{ url_for('static', filename='images/logo_nav.png') }}" 
+                         alt="I wendy Matcha Logo" 
+                         style="max-height: 58px; width: auto; object-fit: contain;">
+                </div>
+                <h4 class="fw-bold text-dark mb-1">สมัครสมาชิกใหม่</h4>
+                <p class="text-muted small mb-3">มาเป็นครอบครัว I wendy Matcha กันนะคะ</p>
+                
+                <!-- Member Perks Capsule Badge -->
+                <div class="p-2 px-3 rounded-pill d-inline-flex align-items-center gap-2 small" 
+                     style="background-color: #ecf5f8; border: 1.5px solid #bdd9e7; color: #355f73;">
+                    <span style="color: #f59e0b;"><i class="fa-solid fa-gift"></i></span>
+                    <span> いらっしゃいませ！ 🍵</span>
+                </div>
+            </div>
+
+            <!-- แจ้งเตือนข้อผิดพลาดภายในกล่องสมัครสมาชิกอย่างชัดเจน -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-3">
+                        {% for category, msg in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center p-3 small text-start" role="alert">
+                                <div class="me-2 fs-5">
+                                    {% if category == 'success' %}<i class="fa-solid fa-circle-check text-success"></i>
+                                    {% elif category == 'danger' %}<i class="fa-solid fa-circle-exclamation text-danger"></i>
+                                    {% elif category == 'warning' %}<i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                                    {% else %}<i class="fa-solid fa-circle-info text-info"></i>{% endif %}
+                                </div>
+                                <div class="flex-grow-1 fw-medium">{{ msg }}</div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form id="registerForm" action="{{ url_for('register') }}" method="POST">
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                        <i class="fa-solid fa-signature text-muted me-1"></i> ชื่อ-นามสกุล (Name)
+                    </label>
+                    <input type="text" name="name" class="form-control rounded-pill py-2 px-3" placeholder="ระบุชื่อ-นามสกุล" value="{{ name or '' }}" required>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                        <i class="fa-solid fa-phone text-muted me-1"></i> เบอร์โทรศัพท์ (Telephone)
+                    </label>
+                    <input type="tel" name="phone" id="phoneInput" class="form-control rounded-pill py-2 px-3" 
+                           placeholder="08xxxxxxxx (10 หลัก)" 
+                           pattern="0[0-9]{9}" 
+                           maxlength="10" 
+                           inputmode="numeric" 
+                           value="{{ phone or '' }}"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                           title="กรุณากรอกเบอร์โทรศัพท์ 10 หลักที่เริ่มต้นด้วยเลข 0" required>
+                    <small class="text-muted d-block mt-1 ps-2" style="font-size: 0.75rem;">
+                        {# <i class="fa-solid fa-circle-info me-1" style="color: #435b38;"></i> ต้องเริ่มต้นด้วยเลข 0 และเป็นตัวเลข 10 หลักเท่านั้น #}
+                    </small>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                        <i class="fa-regular fa-envelope text-muted me-1"></i> อีเมล (Email) <span class="text-danger">*</span>
+                    </label>
+                    <input type="email" name="email" class="form-control rounded-pill py-2 px-3" 
+                           placeholder="customer@email.com" value="{{ email or '' }}" required>
+                    <small class="text-muted d-block mt-1 ps-2" style="font-size: 0.72rem;">
+                        {# <i class="fa-solid fa-shield-halved me-1" style="color: #435b38;"></i> ใช้สำหรับรับรหัส OTP เมื่อลืมรหัสผ่าน #}
+                    </small>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                        <i class="fa-regular fa-user text-muted me-1"></i> ชื่อผู้ใช้ (Username) <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="username" class="form-control rounded-pill py-2 px-3" placeholder="ชื่อผู้ใช้สำหรับเข้าสู่ระบบ" value="{{ username or '' }}" required>
+                </div>
+
+                <div class="mb-4 text-start">
+                    <label class="form-label fw-semibold text-dark small mb-1">
+                        <i class="fa-solid fa-lock text-muted me-1"></i> รหัสผ่าน (Password) <span class="text-danger">*</span>
+                    </label>
+                    <input type="password" id="regPasswordInput" name="password" class="form-control rounded-pill py-2 px-3" 
+                           placeholder="ตัวอักษรและตัวเลข 8 ตัวขึ้นไป" 
+                           pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$" 
+                           minlength="8" 
+                           title="รหัสผ่านต้องมีตัวอักษรภาษาอังกฤษและตัวเลขรวมกันอย่างน้อย 8 ตัว" required>
+                    <div id="regPasswordErrorMsg" class="text-danger small mt-1 ps-2 d-none" style="font-size: 0.75rem;">
+                        <i class="fa-solid fa-circle-exclamation me-1"></i> รหัสผ่านต้องมีตัวอักษรภาษาอังกฤษและตัวเลขรวมกันอย่างน้อย 8 ตัว
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-matcha w-100 py-3 rounded-pill fs-6 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>สมัครสมาชิก & รับสิทธิ์สะสมแต้ม</span>
+                </button>
+            </form>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <p class="mb-0 text-muted small">
+                    มีบัญชีอยู่แล้ว? 
+                    <a href="{{ url_for('login') }}" class="fw-bold text-decoration-none ms-1" style="color: #d86e8a;">
+                        <i class="fa-solid fa-right-to-bracket me-1"></i> เข้าสู่ระบบที่นี่
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const regPassInput = document.getElementById('regPasswordInput');
+    const regPassError = document.getElementById('regPasswordErrorMsg');
+    const regForm = document.getElementById('registerForm');
+
+    function checkRegPassword(showIfInvalid = false) {
+        if (!regPassInput) return true;
+        const val = regPassInput.value;
+        if (!val) {
+            if (showIfInvalid) {
+                regPassError.classList.remove('d-none');
+                regPassInput.classList.add('is-invalid');
+                regPassInput.classList.remove('is-valid');
+                return false;
+            } else {
+                regPassError.classList.add('d-none');
+                regPassInput.classList.remove('is-invalid', 'is-valid');
+                return false;
+            }
+        }
+
+        const hasLength = val.length >= 8;
+        const hasLetter = /[A-Za-z]/.test(val);
+        const hasNumber = /\d/.test(val);
+
+        if (!hasLength || !hasLetter || !hasNumber) {
+            if (showIfInvalid) {
+                regPassError.classList.remove('d-none');
+                regPassInput.classList.add('is-invalid');
+                regPassInput.classList.remove('is-valid');
+            }
+            return false;
+        } else {
+            regPassError.classList.add('d-none');
+            regPassInput.classList.remove('is-invalid');
+            regPassInput.classList.add('is-valid');
+            return true;
+        }
+    }
+
+    if (regPassInput) {
+        regPassInput.addEventListener('input', function() {
+            if (regPassError && !regPassError.classList.contains('d-none')) {
+                checkRegPassword(true);
+            } else if (regPassInput.value.length >= 8) {
+                checkRegPassword(false);
+            }
+        });
+
+        regPassInput.addEventListener('blur', function() {
+            if (regPassInput.value) {
+                checkRegPassword(true);
+            }
+        });
+    }
+
+    if (regForm) {
+        regForm.addEventListener('submit', function(e) {
+            const isPassValid = checkRegPassword(true);
+            if (!isPassValid) {
+                e.preventDefault();
+                regPassError.classList.remove('d-none');
+                regPassInput.classList.add('is-invalid');
+                regPassInput.focus();
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

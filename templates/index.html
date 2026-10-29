@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-banner mb-4">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <span class="badge hero-badge rounded-pill px-3 py-2 mb-3">
+                🍃 おいしい
+            </span>
+            <h1 class="display-5 fw-bold mb-3">I wendy Matcha 🍵</h1>
+            <p class="lead mb-4 opacity-90">
+                สัมผัสความหอมละมุนของมัทฉะแท้ 100% พร้อมผงมัทฉะคัดเกรดตาม Flavor Notes <br>
+                และเซ็ตอุปกรณ์ชงชา handmade in Japan 
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="#menuSection" class="btn btn-rose rounded-pill px-4 py-2 fw-semibold text-white shadow-sm">
+                    <i class="fa-solid fa-mug-hot me-1"></i> ดูเมนูเครื่องดื่ม
+                </a>
+                {% if not current_user or current_user.role != 'admin' %}
+                <a href="{{ url_for('order_status') }}" class="btn btn-outline-dark rounded-pill px-4 py-2 bg-white shadow-sm fw-semibold">
+                    <i class="fa-solid fa-truck-fast me-1"></i> ติดตามสถานะการสั่งซื้อ
+                </a>
+                <button type="button" class="btn btn-outline-dark rounded-pill px-4 py-2 bg-white shadow-sm fw-semibold d-inline-flex align-items-center gap-2"
+                        data-bs-toggle="modal" data-bs-target="#pointsModal"
+                        title="คลิกเพื่อดูแต้มสะสมและสิทธิพิเศษ">
+                    <span style="color: #f59e0b;"><i class="fa-solid fa-star"></i></span>
+                    <span>{% if current_user %}แต้มสะสม ({{ current_user.points }}/10 แต้ม){% else %}สะสมแต้ม (10 แก้ว ฟรี 1){% endif %}</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Category Filters -->
+<div id="menuSection" class="text-center mb-4">
+    <div class="category-capsule-wrapper shadow-sm">
+        <a href="{{ url_for('index', cat='all') }}" class="category-pill {% if current_cat == 'all' %}active{% endif %}">
+            All
+        </a>
+        <a href="{{ url_for('index', cat='bestseller') }}" class="category-pill {% if current_cat == 'bestseller' %}active{% endif %}">
+            <i class="fa-solid fa-star text-warning me-1"></i>  Best Sellers
+        </a>
+        <a href="{{ url_for('index', cat='Pure') }}" class="category-pill {% if current_cat == 'Pure' %}active{% endif %}">
+            Pure Matcha
+        </a>
+        <a href="{{ url_for('index', cat='Latte') }}" class="category-pill {% if current_cat == 'Latte' %}active{% endif %}">
+            Matcha Latte
+        </a>
+        <a href="{{ url_for('index', cat='Fusion') }}" class="category-pill {% if current_cat == 'Fusion' %}active{% endif %}">
+            Matcha Fusion
+        </a>
+        <a href="{{ url_for('index', cat='powder') }}" class="category-pill {% if current_cat == 'powder' %}active{% endif %}">
+            Matcha Powder
+        </a>
+        <a href="{{ url_for('index', cat='equipment') }}" class="category-pill {% if current_cat in ['equipment', 'set'] %}active{% endif %}">
+            Matcha Sets
+        </a>
+    </div>
+</div>
+
+<!-- Products Grid -->
+<div class="row g-4 mb-5">
+    {% for product in products %}
+    <div class="col-md-6 col-lg-4 col-xl-3">
+        <div class="product-card {% if product.category == 'equipment' %}product-card-set{% endif %}">
+            <div class="product-img-wrapper {% if product.category == 'equipment' %}product-img-wrapper-set{% endif %} position-relative overflow-hidden">
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                     class="product-img {% if product.category == 'equipment' %}product-img-set{% endif %} {% if product.is_active == 0 or product.stock <= 0 %}opacity-50{% endif %}" loading="lazy">
+                
+                {% if product.is_active == 0 %}
+                <div class="position-absolute top-50 start-50 translate-middle w-100 text-center" style="z-index: 5;">
+                    <span class="badge bg-warning text-dark border border-warning shadow px-3 py-2 rounded-pill fw-bold fs-6">
+                        <i class="fa-solid fa-clock-rotate-left me-1"></i> หมดชั่วคราว
+                    </span>
+                </div>
+                {% elif product.stock <= 0 %}
+                <div class="position-absolute top-50 start-50 translate-middle w-100 text-center" style="z-index: 5;">
+                    <span class="badge bg-danger text-white border border-white shadow px-3 py-2 rounded-pill fw-bold fs-6">
+                        <i class="fa-solid fa-ban me-1"></i> SOLD OUT
+                    </span>
+                </div>
+                {% endif %}
+
+                <!-- Category Badge -->
+                <span class="badge-category">
+                    {% if product.category == 'drink' %}
+                        {% if product.drink_category == 'Pure' %}Pure Matcha
+                        {% elif product.drink_category == 'Latte' %}Matcha Latte
+                        {% elif product.drink_category == 'Fusion' %}Matcha Fusion
+                        {% else %}Drink{% endif %}
+                    {% elif product.category == 'powder' %}Matcha Powder
+                    {% else %}Matcha Set{% endif %}
+                </span>
+
+                <!-- Best Seller Star Badge -->
+                {% if product.id in bestseller_ids or product.is_bestseller == 1 %}
+                <span class="badge-bestseller">
+                    <i class="fa-solid fa-star"></i> ขายดี
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="product-body">
+                <h5 class="product-title mb-1">{{ product.name }}</h5>
+
+                <!-- Stock Indicator Badges -->
+                {% if product.is_active == 1 and product.stock > 0 %}
+                    {% if product.stock == 1 %}
+                    <div class="mb-2">
+                        <span class="badge bg-danger text-white rounded-pill px-2.5 py-1 shadow-sm" style="font-size: 0.72rem;">
+                            <i class="fa-solid fa-fire me-1"></i> เหลือเพียง 1 {% if product.category == 'drink' %}แก้วสุดท้าย{% else %}ชิ้นสุดท้าย{% endif %}!
+                        </span>
+                    </div>
+                    {% elif product.stock <= 5 %}
+                    <div class="mb-2">
+                        <span class="badge bg-warning-subtle text-dark border border-warning rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                            ⚡ เหลือในคลัง {{ product.stock }} {% if product.category == 'drink' %}แก้ว{% else %}ชิ้น{% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <p class="product-desc">{{ product.description }}</p>
+
+                <!-- Options for Drinks -->
+                {% if product.category == 'drink' %}
+                <div class="p-2 rounded-3 mb-3 border" style="background-color: #fafcfb; border-color: #f0e6ea !important;">
+                    {% if product.has_milk_option == 1 %}
+                    <!-- Has Milk Option -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="small text-muted d-block" style="font-size: 0.72rem;">ระดับความหวาน</label>
+                            <select class="form-select form-select-sm" id="sweetness_{{ product.id }}" {% if product.is_active == 0 or product.stock <= 0 %}disabled{% endif %}>
+                                <option value="ปกติ 100%">100% ปกติ</option>
+                                <option value="หวานน้อย 50%">50% หวานน้อย</option>
+                                <option value="หวานน้อยมาก 25%">25% หวานน้อยมาก</option>
+                                <option value="ไม่หวาน 0%">0% ไม่หวาน</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-muted d-block" style="font-size: 0.72rem;">ชนิดนม (Milk)</label>
+                            <select class="form-select form-select-sm" id="milk_{{ product.id }}" {% if product.is_active == 0 or product.stock <= 0 %}disabled{% endif %}>
+                                <option value="นมสดแท้">นมสดแท้</option>
+                                <option value="นมโอ๊ต (+15฿)">นมโอ๊ต</option>
+                                <option value="นมอัลมอนด์ (+15฿)">นมอัลมอนด์</option>
+                            </select>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Non-Milk Drinks: Show only sweetness, no milk option or text -->
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="small text-muted d-block" style="font-size: 0.72rem;">ระดับความหวาน</label>
+                            <select class="form-select form-select-sm" id="sweetness_{{ product.id }}" {% if product.is_active == 0 or product.stock <= 0 %}disabled{% endif %}>
+                                <option value="ปกติ 100%">100% ปกติ</option>
+                                <option value="หวานน้อย 50%">50% หวานน้อย</option>
+                                <option value="หวานน้อยมาก 25%">25% หวานน้อยมาก</option>
+                                <option value="ไม่หวาน 0%">0% ไม่หวาน</option>
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
+                    <div>
+                        <span class="text-muted small">ราคา</span>
+                        <div class="product-price">{{ product.price|currency }} ฿</div>
+                    </div>
+
+                    {% if current_user and current_user.role == 'admin' %}
+                    <div>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2 small">
+                            📦 สต็อค: {{ product.stock }} ชิ้น
+                        </span>
+                    </div>
+                    {% elif product.is_active == 0 or product.stock <= 0 %}
+                    <div>
+                        <span class="badge bg-secondary-subtle text-muted border rounded-pill px-3 py-2 small">
+                            <i class="fa-solid fa-circle-xmark text-danger me-1"></i> 
+                            {% if product.is_active == 0 %}หมดชั่วคราว{% else %}สินค้าหมด (Sold Out){% endif %}
+                        </span>
+                    </div>
+                    {% else %}
+                    {% set in_cart = cart_counts.get(product.id, 0) if cart_counts else 0 %}
+                    {% set remaining = product.stock - in_cart %}
+                    <div id="cart_action_wrap_{{ product.id }}">
+                        {% if remaining <= 0 %}
+                        <div class="text-end">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1.5 small d-inline-block">
+                                <i class="fa-solid fa-check me-1"></i> ครบสต็อกแล้ว ({{ in_cart }} ในตะกร้า)
+                            </span>
+                        </div>
+                        {% else %}
+                        <div class="d-flex align-items-center gap-1 justify-content-end">
+                            <input type="number" id="qty_{{ product.id }}" value="1" min="1" max="{{ remaining }}" 
+                                   oninput="if(this.value < 1) this.value = 1; if(this.value > {{ remaining }}) this.value = {{ remaining }};"
+                                   class="form-control form-control-sm text-center" style="width: 50px; border-radius: 8px;">
+                            <button id="btn_add_{{ product.id }}" onclick="addToCart({{ product.id }}, '{{ product.category }}', {{ product.has_milk_option }}, {{ product.stock }})" 
+                                    class="btn btn-matcha btn-sm px-2.5 d-flex align-items-center gap-1 text-nowrap">
+                                <i class="fa-solid fa-plus"></i> ตะกร้า
+                            </button>
+                        </div>
+                        {% if in_cart > 0 %}
+                        <div class="text-end mt-1 text-muted" style="font-size: 0.68rem;" id="in_cart_note_{{ product.id }}">
+                            มีในตะกร้าแล้ว {{ in_cart }} (เหลือสั่งได้อีก {{ remaining }})
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Toast notification for adding to cart -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="cartToast" class="toast align-items-center text-bg-dark border-0 rounded-4 shadow-lg" role="alert">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                <span id="toastMessage">เพิ่มสินค้าลงตะกร้าแล้ว</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function addToCart(productId, category, hasMilkOption, totalStock) {
+    const qtyInput = document.getElementById('qty_' + productId);
+    let quantity = qtyInput ? parseInt(qtyInput.value) : 1;
+    if (isNaN(quantity) || quantity < 1) {
+        quantity = 1;
+        if (qtyInput) qtyInput.value = 1;
+    }
+
+    let sweetness = '-';
+    let milkType = '-';
+
+    if (category === 'drink') {
+        const sweetSelect = document.getElementById('sweetness_' + productId);
+        if (sweetSelect) sweetness = sweetSelect.value;
+
+        if (hasMilkOption === 1) {
+            const milkSelect = document.getElementById('milk_' + productId);
+            if (milkSelect) milkType = milkSelect.value;
+        } else {
+            milkType = '-';
+        }
+    }
+
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    formData.append('quantity', quantity);
+    formData.append('sweetness', sweetness);
+    formData.append('milk_type', milkType);
+
+    fetch('/cart/add', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const navBadge = document.getElementById('navCartCount');
+            if (navBadge) navBadge.innerText = data.total_items;
+            
+            const floatBadge = document.getElementById('floatingCartCount');
+            if (floatBadge) floatBadge.innerText = data.total_items;
+
+            const floatWidget = document.getElementById('floatingCartWidget');
+            if (floatWidget) {
+                floatWidget.classList.remove('animate-cart-pulse');
+                void floatWidget.offsetWidth; // Force DOM reflow to retrigger animation
+                floatWidget.classList.add('animate-cart-pulse');
+            }
+
+            document.getElementById('toastMessage').innerText = data.message;
+            const toastEl = document.getElementById('cartToast');
+            const toast = new bootstrap.Toast(toastEl, { delay: 2500 });
+            toast.show();
+
+            const wrap = document.getElementById('cart_action_wrap_' + productId);
+            if (wrap) {
+                if (data.remaining <= 0) {
+                    wrap.innerHTML = `<div class="text-end">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1.5 small d-inline-block">
+                            <i class="fa-solid fa-check me-1"></i> ครบสต็อกแล้ว (${data.in_cart} ในตะกร้า)
+                        </span>
+                    </div>`;
+                } else {
+                    const inputEl = document.getElementById('qty_' + productId);
+                    if (inputEl) {
+                        inputEl.max = data.remaining;
+                        inputEl.value = 1;
+                        inputEl.setAttribute('oninput', `if(this.value < 1) this.value = 1; if(this.value > ${data.remaining}) this.value = ${data.remaining};`);
+                    }
+                    let noteEl = document.getElementById('in_cart_note_' + productId);
+                    if (!noteEl) {
+                        noteEl = document.createElement('div');
+                        noteEl.id = 'in_cart_note_' + productId;
+                        noteEl.className = 'text-end mt-1 text-muted';
+                        noteEl.style.fontSize = '0.68rem';
+                        wrap.appendChild(noteEl);
+                    }
+                    noteEl.innerText = `มีในตะกร้าแล้ว ${data.in_cart} (เหลือสั่งได้อีก ${data.remaining})`;
+                }
+            }
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('เกิดข้อผิดพลาดในการเพิ่มสินค้าลงตะกร้า');
+    });
+}
+</script>
+{% endblock %}

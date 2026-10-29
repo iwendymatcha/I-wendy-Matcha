@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-cart-shopping text-success me-2"></i> ตะกร้าสินค้าของคุณ</h2>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-matcha btn-sm rounded-pill px-3">
+        <i class="fa-solid fa-arrow-left me-1"></i> เลือกสินค้าเพิ่ม
+    </a>
+</div>
+
+{% if cart %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-3">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">สินค้า</th>
+                            <th>ตัวเลือก</th>
+                            <th class="text-center">ราคา</th>
+                            <th class="text-center">จำนวน</th>
+                            <th class="text-end">รวม</th>
+                            <th class="pe-4 text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="{{ item.image_url }}" alt="{{ item.name }}" 
+                                         class="rounded-3 object-fit-cover shadow-sm" style="width: 55px; height: 55px;">
+                                    <div>
+                                        <h6 class="fw-bold mb-1 text-dark d-flex align-items-center gap-1 flex-wrap">
+                                            <span>{{ item.name }}</span>
+                                            {% if item.product_id in bestseller_ids %}
+                                            <span class="badge bg-warning text-dark border border-warning rounded-pill px-2 py-0.5" style="font-size: 0.65rem;">
+                                                <i class="fa-solid fa-star"></i> ขายดี
+                                            </span>
+                                            {% endif %}
+                                        </h6>
+                                        <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">
+                                            {{ item.drink_category or item.category }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.category == 'drink' %}
+                                <div class="small">
+                                    <span class="d-block text-muted">หวาน: <strong>{{ item.sweetness }}</strong></span>
+                                    {% if item.has_milk_option == 1 and item.milk_type not in ['-', 'ไม่ใช้นม'] %}
+                                    <span class="d-block text-muted">นม: <strong>{{ item.milk_type }}</strong></span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center fw-semibold text-muted">
+                                {{ item.price|currency }} ฿
+                            </td>
+                            <td class="text-center">
+                                <div class="d-inline-flex align-items-center border rounded-pill px-2 py-1 bg-light">
+                                    <form action="{{ url_for('update_cart') }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                                        <input type="hidden" name="action" value="decrease">
+                                        <button type="submit" class="btn btn-sm btn-link p-0 text-dark text-decoration-none" style="width: 22px;">-</button>
+                                    </form>
+                                    <span class="mx-2 fw-bold text-dark">{{ item.quantity }}</span>
+                                    <form action="{{ url_for('update_cart') }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                                        <input type="hidden" name="action" value="increase">
+                                        <button type="submit" class="btn btn-sm btn-link p-0 text-dark text-decoration-none {% if item.stock is defined and item.quantity >= item.stock %}text-muted opacity-25 pe-none{% endif %}" 
+                                                style="width: 22px;" {% if item.stock is defined and item.quantity >= item.stock %}disabled title="ในคลังมีเพียง {{ item.stock }} ชิ้น"{% endif %}>+</button>
+                                    </form>
+                                </div>
+                                {% if item.stock is defined %}
+                                <div class="mt-1" style="font-size: 0.68rem;">
+                                    {% if item.stock == 1 %}
+                                        <span class="text-danger fw-semibold">⚡ มีในคลังเพียง 1 ชิ้น</span>
+                                    {% elif item.quantity >= item.stock %}
+                                        <span class="text-danger">เต็มจำนวนในคลัง ({{ item.stock }} ชิ้น)</span>
+                                    {% else %}
+                                        <span class="text-muted">สต็อกคงเหลือ: {{ item.stock }} ชิ้น</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold text-success">
+                                {{ (item.price * item.quantity)|comma }} ฿
+                            </td>
+                            <td class="pe-4 text-center">
+                                <form action="{{ url_for('update_cart') }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="index" value="{{ loop.index0 }}">
+                                    <input type="hidden" name="action" value="remove">
+                                    <button type="submit" class="btn btn-sm text-danger opacity-75 hover-opacity-100 p-0" title="ลบรายการนี้">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-3 bg-light d-flex justify-content-between align-items-center border-top">
+                <a href="{{ url_for('clear_cart') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3" 
+                   onclick="return confirm('คุณต้องการล้างตะกร้าสินค้าทั้งหมดใช่หรือไม่?')">
+                    <i class="fa-solid fa-trash-arrow-up me-1"></i> ล้างตะกร้า
+                </a>
+                <span class="text-muted small">สามารถเลือกเพิ่มเมนูน้ำและอุปกรณ์ได้ตามต้องการ</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 85px;">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">สรุปค่าใช้จ่ายเบื้องต้น</h5>
+
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">ยอดรวมสินค้า (รวม VAT):</span>
+                <span class="fw-bold fs-5 text-dark">{{ subtotal|comma }} ฿</span>
+            </div>
+
+            <div class="d-flex justify-content-between mb-2 small text-muted">
+                <span>มูลค่าสินค้าก่อนภาษี:</span>
+                <span class="fw-semibold text-dark">{{ before_vat|comma }} ฿</span>
+            </div>
+
+            <div class="d-flex justify-content-between mb-3 small text-muted">
+                <span>ภาษีมูลค่าเพิ่ม (VAT 7% ในราคา):</span>
+                <span class="fw-semibold text-dark">{{ vat_est|comma }} ฿</span>
+            </div>
+
+            <a href="{{ url_for('checkout') }}" class="btn btn-matcha w-100 py-3 rounded-pill fs-5 shadow">
+                ไปหน้าปักหมุด & ชำระเงิน <i class="fa-solid fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5 bg-white rounded-4 shadow-sm my-4">
+    <div class="fs-1 text-muted mb-3"><i class="fa-solid fa-basket-shopping text-success opacity-50"></i></div>
+    <h4 class="fw-bold text-dark">ยังไม่มีสินค้าในตะกร้า</h4>
+    <p class="text-muted mb-4">เลือกเมนูที่คุณชื่นชอบได้เลย <br> ><</p>
+    <a href="{{ url_for('index') }}" class="btn btn-matcha rounded-pill px-4 py-2">
+        <i class="fa-solid fa-mug-hot me-1"></i> เลือกดูเมนูสินค้า
+    </a>
+</div>
+{% endif %}
+{% endblock %}

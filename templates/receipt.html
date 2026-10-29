@@ -1,0 +1,604 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+/* Receipt Page Styling (Modeled on realistic printer slot dispenser + thermal paper style) */
+.receipt-wrapper {
+    background: transparent;
+    min-height: calc(100vh - 200px);
+    padding: 2rem 1rem 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Printer Dispenser Assembly */
+.printer-dispenser-container {
+    position: relative;
+    max-width: 530px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Background Printer Fixture Slot */
+.printer-slot-base {
+    width: 100%;
+    height: auto;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.08));
+    position: relative;
+    z-index: 1;
+}
+
+/* Foreground Upper Lip: overlaps the top of the emerging paper */
+.printer-slot-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    z-index: 10;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* Realistic Receipt Feed Animation */
+@keyframes printFeedAnimation {
+    0% {
+        transform: translateY(-40px);
+        opacity: 0.15;
+        clip-path: inset(0 0 100% 0);
+    }
+    30% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+        clip-path: inset(0 -30px -30px -30px);
+    }
+}
+
+/* Thermal Receipt Paper */
+.receipt-paper {
+    position: relative;
+    z-index: 5;
+    background: #ffffff;
+    /* Slit width in printer_slot.png is 402px / 564px = 71.28% */
+    width: 71.3%;
+    /* Tucks top of paper inside the dark slot slit */
+    margin-top: -12.1%;
+    padding: 28px 24px 22px;
+    color: #2b332d;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    border-radius: 0;
+    border: none;
+    /* 3D soft thermal paper drop shadow */
+    filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.09)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.04));
+    animation: printFeedAnimation 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Top slot shadow inside the paper */
+.receipt-paper::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 12px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.06) 50%, transparent 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Serrated Sawtooth / Zigzag Tear Edge at the Bottom */
+.receipt-paper::after {
+    content: "";
+    position: absolute;
+    bottom: -11px;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 12' width='16' height='12'%3E%3Cpolygon points='0,0 8,12 16,0' fill='%23ffffff'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 16px 12px;
+    z-index: 6;
+}
+
+.receipt-dashed {
+    border-top: 1px dashed #cfd7d1;
+    margin: 14px 0;
+}
+
+.receipt-dashed-dark {
+    border-top: 1.5px dashed #6f8274;
+    margin: 14px 0;
+}
+
+.receipt-logo-circle {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background-color: #f7faf8;
+    border: 2px solid #8ebd9b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.85rem;
+    margin: 0 auto 10px;
+}
+
+.receipt-store-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #1a3325;
+    text-align: center;
+    margin-bottom: 2px;
+}
+
+.receipt-subtitle {
+    font-size: 0.82rem;
+    color: #69786f;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.receipt-badge-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-align: center;
+    color: #1a3325;
+    padding: 6px 0;
+}
+
+.receipt-table-header {
+    font-size: 0.82rem;
+    color: #69786f;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #cfd7d1;
+    margin-bottom: 10px;
+}
+
+.receipt-item-row {
+    margin-bottom: 10px;
+}
+
+.receipt-item-title {
+    font-weight: 600;
+    color: #1c2e22;
+    font-size: 0.9rem;
+}
+
+.receipt-item-desc {
+    font-size: 0.76rem;
+    color: #708076;
+    margin-top: 1px;
+}
+
+.receipt-summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.86rem;
+    margin-bottom: 5px;
+    color: #3b4d41;
+}
+
+.receipt-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    color: #142e1f;
+    font-size: 1.15rem;
+    padding: 6px 0;
+}
+
+.receipt-footer-msg {
+    text-align: center;
+    padding-top: 10px;
+}
+
+/* Barcode Styling (Matching Reference Image 1) */
+.receipt-barcode-box {
+    text-align: center;
+    margin-top: 18px;
+    margin-bottom: 4px;
+}
+.receipt-barcode-num {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.82rem;
+    letter-spacing: 2.5px;
+    color: #444;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+/* Mobile Responsive */
+@media (max-width: 576px) {
+    .printer-dispenser-container {
+        max-width: 98%;
+    }
+    .receipt-paper {
+        padding: 20px 14px 16px;
+        font-size: 0.82rem;
+    }
+    .receipt-table-header {
+        font-size: 0.76rem;
+    }
+    .receipt-item-title {
+        font-size: 0.82rem;
+    }
+    .receipt-item-desc {
+        font-size: 0.72rem;
+    }
+    .receipt-summary-row {
+        font-size: 0.78rem;
+    }
+    .receipt-total-row {
+        font-size: 1rem;
+    }
+    .receipt-store-title {
+        font-size: 1.15rem;
+    }
+}
+
+/* Print Rules */
+@media print {
+    body {
+        background: #ffffff !important;
+        padding: 0 !important;
+    }
+    .navbar, footer, .no-print, .alert, .printer-slot-base, .printer-slot-top {
+        display: none !important;
+    }
+    .receipt-wrapper {
+        background: #ffffff !important;
+        padding: 0 !important;
+        min-height: auto !important;
+    }
+    .printer-dispenser-container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    .receipt-paper {
+        box-shadow: none !important;
+        filter: none !important;
+        border: 1px solid #ddd !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-top: 0 !important;
+        padding: 20px !important;
+        animation: none !important;
+        clip-path: none !important;
+    }
+    .receipt-paper::before, .receipt-paper::after {
+        display: none !important;
+    }
+}
+</style>
+
+{% if order.payment_status != 'verified' %}
+<style>
+@media print {
+    body * {
+        display: none !important;
+    }
+    body::before {
+        content: "⚠️ ใบเสร็จจะพิมพ์ให้ได้หลังจากแอดมินตรวจสอบและยืนยันการโอนสำเร็จแล้วเท่านั้น";
+        display: block;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+        color: #cd6184;
+        margin-top: 80px;
+        font-family: 'Prompt', sans-serif;
+    }
+}
+</style>
+<script>
+window.addEventListener('beforeprint', (event) => {
+    alert('ขออภัยค่ะ ใบเสร็จจะพิมพ์ให้ได้หลังจากแอดมินตรวจสอบและยืนยันการโอนสำเร็จแล้วเท่านั้น');
+});
+</script>
+{% endif %}
+
+<div class="receipt-wrapper">
+    <!-- Printer Assembly Container -->
+    <div class="printer-dispenser-container">
+        <!-- Printer mouth slot base fixture (behind paper) -->
+        <img src="{{ url_for('static', filename='images/printer_slot.png') }}" class="printer-slot-base no-print" alt="เครื่องพิมพ์ใบเสร็จ">
+
+        <!-- The Thermal Receipt Slip Card emerging from slot -->
+        <div class="receipt-paper">
+        <!-- Store Logo: I wendy Matcha -->
+        <div class="text-center mb-2">
+            <img src="{{ url_for('static', filename='images/logo_nav.png') }}" 
+                 alt="I wendy Matcha Logo" 
+                 style="max-height: 54px; width: auto; object-fit: contain;">
+        </div>
+        <div class="receipt-subtitle">ใบเสร็จรับเงิน</div>
+
+        <!-- Receipt Title Header -->
+        <div class="receipt-badge-title">ใบเสร็จ / RECEIPT</div>
+
+        <!-- Dashed Divider -->
+        <div class="receipt-dashed"></div>
+
+        <!-- Order Information Table (Two Columns) -->
+        <div class="mb-2">
+            <div class="receipt-summary-row">
+                <span class="text-muted">เลขที่ใบเสร็จ</span>
+                <span class="fw-semibold">MTC-R-{{ "%05d"|format(order.id) }}</span>
+            </div>
+            <div class="receipt-summary-row">
+                <span class="text-muted">เลขคำสั่งซื้อ</span>
+                <span>#{{ order.id }} · {{ order.order_no }}</span>
+            </div>
+            <div class="receipt-summary-row">
+                <span class="text-muted">วันที่และเวลา</span>
+                <span>{{ order.created_at }}</span>
+            </div>
+            <div class="receipt-summary-row">
+                <span class="text-muted">ชื่อลูกค้า</span>
+                <span class="fw-semibold">{{ order.customer_name }}</span>
+            </div>
+            {% if order.address_note %}
+            <div class="receipt-summary-row">
+                <span class="text-muted">สถานที่จัดส่ง</span>
+                <span class="text-end" style="max-width: 240px;">{{ order.address_note }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Dashed Divider -->
+        <div class="receipt-dashed"></div>
+
+        <!-- Items Table Header -->
+        <div class="receipt-table-header">
+            <span>รายการ / รูปแบบ</span>
+            <div class="d-flex gap-4">
+                <span style="min-width: 45px; text-align: center;">จำนวน</span>
+                <span style="min-width: 60px; text-align: right;">ราคา</span>
+            </div>
+        </div>
+
+        <!-- Items Rows -->
+        <div class="receipt-items-list mb-3">
+            {% for item in items %}
+            <div class="receipt-item-row">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div style="flex: 1; padding-right: 10px;">
+                        <div class="receipt-item-title d-flex align-items-center gap-1 flex-wrap">
+                            <span>{{ item.product_name }}</span>
+                            {% if item.product_id in bestseller_ids %}
+                            <span class="badge bg-warning text-dark border border-warning rounded-pill px-1.5 py-0.5" style="font-size: 0.6rem;">
+                                <i class="fa-solid fa-star"></i> ขายดี
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="receipt-item-desc">
+                            {% if item.category == 'drink' %}
+                                เย็น · หวาน ความหวาน {{ item.sweetness }}
+                                {% if item.has_milk_option == 1 and item.milk_type not in ['-', 'ไม่ใช้นม'] %}
+                                 · นม: {{ item.milk_type }}
+                                {% endif %}
+                            {% else %}
+                                {{ item.product_name_th or 'สินค้าพร้อมส่ง' }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-4 align-items-center">
+                        <span style="min-width: 45px; text-align: center; font-weight: 500;">{{ item.quantity }}</span>
+                        <span style="min-width: 60px; text-align: right; font-weight: 600;">{{ item.total_price|currency }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Dashed Divider -->
+        <div class="receipt-dashed"></div>
+
+        <!-- Financial Summary -->
+        <div class="receipt-summary-block">
+            <div class="receipt-summary-row">
+                <span>ยอดรวมสินค้า (รวม VAT)</span>
+                <span>{{ order.subtotal|comma }} ฿</span>
+            </div>
+
+            {% if order.discount_amount > 0 %}
+            <div class="receipt-summary-row text-success">
+                <span>ส่วนลดสิทธิ์แลกแต้ม (ฟรี 1 แก้ว)</span>
+                <span>- {{ order.discount_amount|comma }} ฿</span>
+            </div>
+            {% endif %}
+
+            {% set net_items = order.subtotal - order.discount_amount %}
+            {% set before_vat = net_items - order.vat_amount %}
+            <div class="receipt-summary-row text-muted" style="font-size: 0.8rem;">
+                <span>มูลค่าก่อนภาษี (Before VAT)</span>
+                <span>{{ before_vat|comma }} ฿</span>
+            </div>
+
+            <div class="receipt-summary-row text-muted" style="font-size: 0.8rem;">
+                <span>ภาษีมูลค่าเพิ่ม (VAT 7% ในราคา)</span>
+                <span>{{ order.vat_amount|comma }} ฿</span>
+            </div>
+
+            <div class="receipt-summary-row">
+                <span>ค่าจัดส่ง ({{ order.distance_km }} km)</span>
+                <span>{{ order.delivery_fee|comma }} ฿</span>
+            </div>
+        </div>
+
+        <!-- Dashed Dark Divider for Grand Total -->
+        <div class="receipt-dashed-dark"></div>
+
+        <!-- Grand Total Row -->
+        <div class="receipt-total-row">
+            <span>ยอดรวมสุทธิ</span>
+            <span>{{ order.grand_total|comma }} ฿</span>
+        </div>
+
+        <!-- Dashed Divider -->
+        <div class="receipt-dashed"></div>
+
+        <!-- Payment & Status Section -->
+        <div class="receipt-summary-block mb-3">
+            <div class="receipt-summary-row">
+                <span class="text-muted">วิธีชำระเงิน</span>
+                <span class="fw-medium">โอนผ่าน PromptPay / QR</span>
+            </div>
+            <div class="receipt-summary-row">
+                <span class="text-muted">สถานะ</span>
+                <span>
+                    {% if order.payment_status == 'verified' %}
+                        <strong class="text-success">ชำระเงินเรียบร้อยแล้ว</strong>
+                    {% elif order.payment_status == 'rejected' %}
+                        <strong class="text-danger">สลิปไม่ถูกต้อง</strong>
+                    {% else %}
+                        <span class="text-secondary">รอตรวจสอบการชำระเงิน</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Dashed Divider -->
+        <div class="receipt-dashed"></div>
+
+        <!-- Footer Thank You Note (Modeled on IMG_0525.HEIC) -->
+        <div class="receipt-footer-msg">
+            <div class="fw-semibold text-dark mb-1" style="font-size: 0.88rem;">Thank you for choosing I wendy Matcha</div>
+            <div class="text-muted small" style="font-size: 0.78rem;">ขอบคุณที่อุดหนุน แล้วพบกันใหม่นะคะ 🍵</div>
+        </div>
+
+        <!-- Dashed Divider -->
+        <div class="receipt-dashed"></div>
+
+        <!-- Retail Barcode Section (Matching Reference Image 1) -->
+        <div class="receipt-barcode-box">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 38" preserveAspectRatio="xMidYMid meet" style="width: 100%; max-width: 250px; height: 35px;">
+                <rect x="5" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="11" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="16" y="0" width="4" height="38" fill="#1b2e22"/>
+                <rect x="23" y="0" width="1" height="38" fill="#1b2e22"/>
+                <rect x="27" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="33" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="38" y="0" width="5" height="38" fill="#1b2e22"/>
+                <rect x="46" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="51" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="57" y="0" width="1" height="38" fill="#1b2e22"/>
+                <rect x="61" y="0" width="4" height="38" fill="#1b2e22"/>
+                <rect x="68" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="73" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="78" y="0" width="5" height="38" fill="#1b2e22"/>
+                <rect x="86" y="0" width="1" height="38" fill="#1b2e22"/>
+                <rect x="90" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="96" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="101" y="0" width="4" height="38" fill="#1b2e22"/>
+                <rect x="108" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="113" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="119" y="0" width="5" height="38" fill="#1b2e22"/>
+                <rect x="127" y="0" width="1" height="38" fill="#1b2e22"/>
+                <rect x="131" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="136" y="0" width="4" height="38" fill="#1b2e22"/>
+                <rect x="143" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="148" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="154" y="0" width="1" height="38" fill="#1b2e22"/>
+                <rect x="158" y="0" width="4" height="38" fill="#1b2e22"/>
+                <rect x="165" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="170" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="176" y="0" width="5" height="38" fill="#1b2e22"/>
+                <rect x="184" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="189" y="0" width="1" height="38" fill="#1b2e22"/>
+                <rect x="193" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="199" y="0" width="4" height="38" fill="#1b2e22"/>
+                <rect x="206" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="211" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="216" y="0" width="5" height="38" fill="#1b2e22"/>
+                <rect x="224" y="0" width="1" height="38" fill="#1b2e22"/>
+                <rect x="228" y="0" width="3" height="38" fill="#1b2e22"/>
+                <rect x="234" y="0" width="2" height="38" fill="#1b2e22"/>
+                <rect x="239" y="0" width="4" height="38" fill="#1b2e22"/>
+                <rect x="246" y="0" width="2" height="38" fill="#1b2e22"/>
+            </svg>
+            <div class="receipt-barcode-num">#{{ order.order_no }}</div>
+        </div>
+    </div>
+
+        <!-- Foreground Upper Lip of printer slot (overlaps top edge of paper) -->
+        <img src="{{ url_for('static', filename='images/printer_top_lip.png') }}" class="printer-slot-top no-print" alt="printer top">
+    </div>
+
+    <!-- View Attached Payment Slip (Collapsible Drawer) -->
+    {% if order.slip_filename %}
+    <div class="no-print mt-4 text-center" style="max-width: 480px; width: 100%;">
+        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 bg-white shadow-sm" 
+                type="button" data-bs-toggle="collapse" data-bs-target="#slipCollapse">
+            <i class="fa-solid fa-receipt me-1"></i> ดูหลักฐานสลิปโอนเงินที่แนบไว้
+        </button>
+        <div class="collapse mt-3" id="slipCollapse">
+            <div class="card card-body bg-white border rounded-4 p-3 shadow-sm text-center">
+                <small class="text-muted mb-2 d-block">รูปสลิปการโอนเงินที่บันทึกในระบบ:</small>
+                <a href="{{ url_for('static', filename='uploads/' + order.slip_filename) }}" target="_blank">
+                    <img src="{{ url_for('static', filename='uploads/' + order.slip_filename) }}" 
+                         alt="สลิปโอนเงิน" 
+                         class="img-fluid rounded-3 border shadow-sm" 
+                         style="max-height: 250px; object-fit: contain;">
+                </a>
+                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">(คลิกที่รูปเพื่อเปิดดูภาพเต็ม)</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Verification Status Banner (Below Receipt) -->
+    {% if order.payment_status == 'verified' %}
+    <div class="alert alert-success rounded-4 border-0 shadow-sm text-center mt-3 mb-0 no-print" style="max-width: 480px; width: 100%;">
+        <i class="fa-solid fa-circle-check text-success me-1"></i> แอดมินยืนยันการชำระเงินเรียบร้อยแล้ว ท่านสามารถพิมพ์ใบเสร็จได้ค่ะ
+    </div>
+    {% elif order.payment_status == 'rejected' %}
+    <div class="alert alert-danger rounded-4 border-0 shadow-sm text-center mt-3 mb-0 no-print" style="max-width: 480px; width: 100%;">
+        <i class="fa-solid fa-circle-xmark text-danger me-1"></i> สลิปการโอนเงินไม่ถูกต้อง กรุณาติดต่อแอดมินร้านค้า
+    </div>
+    {% else %}
+    <div class="alert rounded-4 border-0 shadow-sm text-center mt-3 mb-0 no-print" style="max-width: 480px; width: 100%; background-color: #ffecf2; color: #8a2a4c; border: 1px solid #f6ccd8 !important;">
+        <i class="fa-solid fa-hourglass-half me-1"></i> <strong>รอแอดมินตรวจสอบการชำระเงิน</strong><br>
+        <span class="small">ใบเสร็จจะพิมพ์ให้ได้หลังจากแอดมินตรวจสอบและยืนยันการโอนสำเร็จแล้วเท่านั้น</span>
+    </div>
+    {% endif %}
+
+    <!-- Bottom Actions Toolbar (The Only Actions Toolbar) -->
+    <div class="no-print mt-4 d-flex flex-wrap justify-content-center gap-2" style="max-width: 480px; width: 100%;">
+        {% if order.payment_status == 'verified' %}
+        <button onclick="window.print()" class="btn btn-matcha rounded-pill px-4 py-2 fw-semibold shadow-sm text-white">
+            <i class="fa-solid fa-print me-1"></i> พิมพ์ใบเสร็จ
+        </button>
+        {% else %}
+        <button class="btn btn-secondary rounded-pill px-4 py-2 fw-semibold shadow-sm opacity-75" disabled 
+                title="ใบเสร็จจะพิมพ์ได้หลังจากแอดมินตรวจสอบและยืนยันการโอนสำเร็จแล้วเท่านั้น" style="cursor: not-allowed;">
+            <i class="fa-solid fa-lock me-1"></i> พิมพ์ใบเสร็จ (รอแอดมินยืนยัน)
+        </button>
+        {% endif %}
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary rounded-pill px-4 py-2 bg-white shadow-sm">
+            <i class="fa-solid fa-house me-1"></i> กลับหน้าร้าน
+        </a>
+        <a href="{{ url_for('profile') }}" class="btn btn-outline-dark rounded-pill px-3 py-2 bg-white shadow-sm">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> ประวัติคำสั่งซื้อ
+        </a>
+    </div>
+</div>
+{% endblock %}

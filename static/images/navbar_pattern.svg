@@ -1,0 +1,47 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='260' height='70' viewBox='0 0 260 70'>
+  <defs>
+    <filter id='softGlow' x='-30%' y='-30%' width='160%' height='160%'>
+      <feGaussianBlur stdDeviation='1.2' result='blur'/>
+      <feComposite in='SourceGraphic' in2='blur' operator='over'/>
+    </filter>
+  </defs>
+
+  <!-- 1. Gold stars (matching logo stars) -->
+  <!-- 5-point star 1 -->
+  <polygon points='38,15 41,22 48,22 42.5,26 44.5,33 38,29 31.5,33 33.5,26 28,22 35,22' fill='#ffd54f' opacity='0.55' filter='url(#softGlow)'/>
+  <!-- 5-point star 2 -->
+  <polygon points='180,44 182,49 188,49 183,52.5 185,58 180,54.5 175,58 177,52.5 172,49 178,49' fill='#ffd54f' opacity='0.48' filter='url(#softGlow)'/>
+  <!-- Small gold star 3 -->
+  <polygon points='128,14 129.5,18 134,18 130.5,20.5 132,24.5 128,22 124,24.5 125.5,20.5 122,18 126.5,18' fill='#ffe082' opacity='0.5'/>
+
+  <!-- 2. Four-point Japanese sparkles ✨ -->
+  <path d='M90,14 Q90,23 99,23 Q90,23 90,32 Q90,23 81,23 Q90,23 90,14 Z' fill='#ffffff' opacity='0.65'/>
+  <path d='M225,20 Q225,27 232,27 Q225,27 225,34 Q225,27 218,27 Q225,27 225,20 Z' fill='#ffffff' opacity='0.55'/>
+  <path d='M15,46 Q15,51 20,51 Q15,51 15,56 Q15,51 10,51 Q15,51 15,46 Z' fill='#ffffff' opacity='0.5'/>
+  <path d='M145,48 Q145,52 149,52 Q145,52 145,56 Q145,52 141,52 Q145,52 145,48 Z' fill='#ffffff' opacity='0.45'/>
+
+  <!-- 3. Sakura petals 🌸 floating gently -->
+  <g transform='translate(60, 20) rotate(25)' opacity='0.35'>
+    <path d='M0,0 C-3,-6 3,-10 6,-8 C9,-6 10,-2 7,2 C5,5 1,3 0,0 Z' fill='#ffffff'/>
+  </g>
+  <g transform='translate(205, 48) rotate(-40)' opacity='0.32'>
+    <path d='M0,0 C-3,-6 3,-10 6,-8 C9,-6 10,-2 7,2 C5,5 1,3 0,0 Z' fill='#ffffff'/>
+  </g>
+
+  <!-- 4. Cute matcha leaves 🍃 -->
+  <g transform='translate(242, 42) rotate(15)' opacity='0.16'>
+    <path d='M0,0 C2,-6 11,-8 14,-4 C17,0 13,9 7,9 C2,9 0,5 0,0 Z' fill='#1b3815'/>
+    <path d='M2,1 Q7,4 12,-2' stroke='#1b3815' stroke-width='0.8' fill='none'/>
+  </g>
+  <g transform='translate(108, 48) rotate(-20)' opacity='0.15'>
+    <path d='M0,0 C2,-5 9,-7 12,-3 C15,1 11,8 5,8 C1,8 0,4 0,0 Z' fill='#1b3815'/>
+  </g>
+
+  <!-- 5. Soft bubbles & bokeh -->
+  <circle cx='75' cy='52' r='2.2' fill='#ffffff' opacity='0.4'/>
+  <circle cx='162' cy='18' r='1.8' fill='#ffffff' opacity='0.35'/>
+  <circle cx='250' cy='16' r='1.5' fill='#ffd54f' opacity='0.45'/>
+  <circle cx='32' cy='48' r='1.6' fill='#ffd54f' opacity='0.4'/>
+  <circle cx='120' cy='32' r='1.2' fill='#ffffff' opacity='0.3'/>
+  <circle cx='195' cy='15' r='1.5' fill='#ffffff' opacity='0.35'/>
+</svg>
